@@ -1,0 +1,46 @@
+name: Deploy to gh-pages
+
+on:
+  push:
+    branches:
+      - master
+      - 7.x
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Move files to branch directory
+        run: |
+          IFS='/' read -r -a ref_parts <<< "$GITHUB_REF"
+          mkdir "${ref_parts[@]: -1:1}"
+          mv *.md "${ref_parts[@]: -1:1}"
+          ls "${ref_parts[@]: -1:1}"
+
+      - name: Create index file
+        run: |
+          IFS='/' read -r -a ref_parts <<< "$GITHUB_REF"
+          cat << EOF > index.html
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta http-equiv="refresh" content="0;URL="${ref_parts[@]: -1:1}/documentation">
+            <script>location.href = "${ref_parts[@]: -1:1}/documentation";</script>
+          </head>
+          <body>
+            <h3>Redirection en cours... <a href="${ref_parts[@]: -1:1}">./${ref_parts[@]: -1:1}/documentation</a><h3>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
+          enable_jekyll: true
+          keep_files: true
+          publish_dir: ./
+          user_name: 'devdocs-fr[bot]'
+          user_email: 'devdocs-fr[bot]@users.noreply.github.com'
